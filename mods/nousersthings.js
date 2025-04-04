@@ -315,7 +315,7 @@ elements.destroyable_pipe = {
                 var y = pixel.y+coord[1];
                 if (isEmpty(x,y)) {
                     createPixel("brick",x,y);
-                    pixelMap[x][y].color = pixelColorPick(pixel,"#808080");
+                    pixelMap[x][y].color = pixelColorPick(pixel,"#586879");
                 }
             }
             pixel.stage = 1;
@@ -626,7 +626,7 @@ elements.e_pipe = {
                 var y = pixel.y+coord[1];
                 if (isEmpty(x,y)) {
                     createPixel("pipe_wall",x,y);
-                    pixelMap[x][y].color = pixelColorPick(pixel,"#808080");
+                    pixelMap[x][y].color = pixelColorPick(pixel,"#586879");
                 }
             }
             pixel.stage = 1;
@@ -744,7 +744,7 @@ elements.destroyable_e_pipe = {
                 var y = pixel.y+coord[1];
                 if (isEmpty(x,y)) {
                     createPixel("brick",x,y);
-                    pixelMap[x][y].color = pixelColorPick(pixel,"#808080");
+                    pixelMap[x][y].color = pixelColorPick(pixel,"#586879");
                 }
             }
             pixel.stage = 1;
@@ -871,7 +871,7 @@ elements.channel_pipe = {
                 var y = pixel.y+coord[1];
                 if (isEmpty(x,y)) {
                     createPixel("pipe_wall",x,y);
-                    pixelMap[x][y].color = pixelColorPick(pixel,"#808080");
+                    pixelMap[x][y].color = pixelColorPick(pixel,"#586879");
                 }
             }
             pixel.stage = 1;
@@ -994,7 +994,7 @@ elements.destroyable_channel_pipe = {
                 var y = pixel.y+coord[1];
                 if (isEmpty(x,y)) {
                     createPixel("brick",x,y);
-                    pixelMap[x][y].color = pixelColorPick(pixel,"#808080");
+                    pixelMap[x][y].color = pixelColorPick(pixel,"#586879");
                 }
             }
             pixel.stage = 1;
@@ -1111,7 +1111,7 @@ elements.bridge_pipe = {
                 var y = pixel.y+coord[1];
                 if (isEmpty(x,y)) {
                     createPixel("pipe_wall",x,y);
-                    pixelMap[x][y].color = pixelColorPick(pixel,"#808080");
+                    pixelMap[x][y].color = pixelColorPick(pixel,"#586879");
                 }
             }
             pixel.stage = 1;
@@ -1215,15 +1215,17 @@ elements.bridge_pipe = {
     canContain: true,
     insulate: true,
 },
-elements.pipe.tick = function(pixel) {
+    elements.pipe.tick = function(pixel) {
         if (!pixel.stage && pixelTicks-pixel.start > 60) {
             for (var i = 0; i < squareCoords.length; i++) {
                 var coord = squareCoords[i];
                 var x = pixel.x+coord[0];
                 var y = pixel.y+coord[1];
+                if (!isEmpty(x,y,true) && elements[pixelMap[x][y].element].movable && newPixel.element != "ray") {
+                    deletePixel(x,y)
+                }
                 if (isEmpty(x,y)) {
                     createPixel("pipe_wall",x,y);
-                    pixelMap[x][y].color = pixelColorPick(pixel,"#808080");
                 }
             }
             pixel.stage = 1;
@@ -1321,7 +1323,7 @@ elements.pipe.tick = function(pixel) {
             }
         }
         doDefaults(pixel);
-    },
+    }
     elements.pipe.insulate = true,
 	filterTypeVar = 0;
 elements.filter = {
@@ -3793,7 +3795,7 @@ elements.hotter_sensor = {
 let pipe_transmitter_channelVar = 0;
 elements.pipe_transmitter = {
     color: "#6e6250",
-    category: "machines",
+    category: "deprecated",
     movable: false,
     canContain: true,
     insulate: true,
@@ -3824,7 +3826,7 @@ elements.pipe_transmitter = {
 let pipe_receiver_channelVar = 0;
 elements.pipe_receiver = {
     color: "#4d4b63",
-    category: "machines",
+    category: "deprecated",
     movable: false,
     canContain: true,
     insulate: true,
@@ -3937,12 +3939,26 @@ renderPostPixel(function(ctx){
         if ((pixel.element == "sign") && pixel.sign){
             ctx.font = `12pt Arial`
             ctx.fillStyle = pixel.color;
-            ctx.fillText(pixel.sign, canvasCoord(pixel.x), canvasCoord(pixel.y))
+            ctx.fillText(pixel.sign.replace(/\$\{([\w.\[\]]+)\}/g, (_, path) => {
+                try {
+                    const value = new Function('return globalThis.' + path)();
+                    return typeof value === 'object' ? JSON.stringify(value) : value ?? '';
+                } catch {
+                    return '';
+                }
+            }), canvasCoord(pixel.x), canvasCoord(pixel.y))
         } else if (pixel.element == "e_sign" && pixel.sign){
             if (pixel.charge || pixel.chargeCD){
                 ctx.font = `12pt Arial`
                 ctx.fillStyle = pixel.color;
-                ctx.fillText(pixel.sign, canvasCoord(pixel.x), canvasCoord(pixel.y))
+                ctx.fillText(pixel.sign.replace(/\$\{([\w.\[\]]+)\}/g, (_, path) => {
+                    try {
+                        const value = new Function('return globalThis.' + path)();
+                        return typeof value === 'object' ? JSON.stringify(value) : value ?? '';
+                    } catch {
+                        return '';
+                    }
+                }), canvasCoord(pixel.x), canvasCoord(pixel.y))
             } else {
                 drawSquare(ctx, pixel.color, pixel.x, pixel.y)
             }
@@ -3973,3 +3989,23 @@ elements.mod_dectector = {
         }
     }
 }
+smoothColor = function(color1, color2, amount){
+    let rgb1 = getPixelColor({color: color1})
+    let rgb2 = getPixelColor({color: color2})
+    return {r:((1-amount)*rgb1.r)+(amount*rgb2.r),g:((1-amount)*rgb1.g)+(amount*rgb2.g),b:((1-amount)*rgb1.b)+(amount*rgb2.b)}
+}
+/*
+elements.delay = {
+    color: ["#df3b3b","#200909"],
+    behavior: behaviors.WALL,
+    category: "machines",
+    movable: false,
+    insulate: true,
+    onSelect: () => {
+        logMessage("Will delay incoming signals by its temperature in Kelvin. -273C for 0 delay.")
+    },
+    tick: function(pixel){
+
+    }
+}
+    */
