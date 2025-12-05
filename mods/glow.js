@@ -1,9 +1,11 @@
 
 var isChromium = !!window.chrome;
+var ua = navigator.userAgent.toLowerCase();
+var isAndroid = ua.indexOf("android") > -1; //&& ua.indexOf("mobile");
 
-if (!isChromium) {
+if (!isChromium && !isAndroid) {
     window.addEventListener("load",function(){
-        console.log(1)
+        console.log("Error: glow.js only works on Chrome or Chromium-based browsers.")
         logMessage("Error: glow.js only works on Chrome or Chromium-based browsers.")
     })
 }
@@ -24,6 +26,8 @@ elements.positron.emit = true;
 elements.plasma.emit = true;
 elements.uranium.emit = 3;
 elements.uranium.emitColor = "#009800";
+elements.molten_uranium.emit = 3;
+elements.molten_uranium.emitColor = "#009800";
 elements.rainbow.emit = true;
 elements.static.emit = true;
 elements.flash.emit = true;
@@ -58,6 +62,13 @@ elements.malware.emit = 2;
 elements.border.emit = 2;
 elements.void.emit = 10;
 
+window.addEventListener("load",()=>{
+    glowmodCtx2.canvas.width = ctx.canvas.width;
+    glowmodCtx2.canvas.height = ctx.canvas.height;
+    glowmodCtx.canvas.width = ctx.canvas.width;
+    glowmodCtx.canvas.height = ctx.canvas.height;
+})
+
 viewInfo[1] = { // Blur Glow (Emissive pixels only)
     name: "",
     pixel: viewInfo[1].pixel,
@@ -85,7 +96,7 @@ viewInfo[1] = { // Blur Glow (Emissive pixels only)
 };
 
 renderEachPixel(function(pixel,ctx) {
-    if (view === 1) {
+    if (view === 1 && settings.textures !== 0) {
         if (elements[pixel.element].emit || pixel.emit || (elements[pixel.element].colorOn && pixel.charge)) {
             let a = (settings.textures !== 0) ? pixel.alpha : undefined;
             let d = pixel.emit||elements[pixel.element].emit||true;
